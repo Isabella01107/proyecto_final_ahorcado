@@ -1,18 +1,97 @@
 import random
 import os
+AHORCADO = [
+    """
+     +---+
+     |   |
+         |
+         |
+         |
+         |
+    =========""",
+    """
+     +---+
+     |   |
+     O   |
+         |
+         |
+         |
+    =========""",
+    """
+     +---+
+     |   |
+     O   |
+     |   |
+         |
+         |
+    =========""",
+    """
+     +---+
+     |   |
+     O   |
+    /|   |
+         |
+         |
+    =========""",
+    """
+     +---+
+     |   |
+     O   |
+    /|\  |
+         |
+         |
+    =========""",
+    """
+     +---+
+     |   |
+     O   |
+    /|\  |
+    /    |
+         |
+    =========""",
+    """
+     +---+
+     |   |
+     O   |
+    /|\  |
+    / \  |
+         |
+    ========="""
+]
 
 # ------------------ Manejo de archivos ------------------
 
 def cargar_palabras(ruta="palabras.txt"):
-    """Lee palabras.txt y devuelve una lista de palabras."""
+    """
+    Carga las palabras desde un archivo de texto con formato 'categoria:palabra'.
+
+    Retorna:
+        dict: Diccionario {categoria: [palabras]}.
+    """
+    categorias = {}
     if not os.path.exists(ruta):
         print("No se encontró palabras.txt")
-        return []
+        return {}
     with open(ruta, "r", encoding="utf-8") as f:
-        return [linea.strip().lower() for linea in f if linea.strip()]
+        for linea in f:
+            partes = linea.strip().split(":")
+            if len(partes) == 2:
+                categoria, palabra = partes
+                categoria, palabra = categoria.lower(), palabra.lower()
+                if categoria not in categorias:
+                    categorias[categoria] = []
+                categorias[categoria].append(palabra)
+            else:
+                print(f"Línea inválida en palabras.txt: {linea.strip()}")
+    return categorias
 
 def cargar_puntajes(ruta="puntajes.txt"):
-    """Lee puntajes.txt y devuelve un diccionario {apodo: [victorias, derrotas]}."""
+    """
+    Carga los puntajes desde un archivo de texto.
+
+    Retorna:
+        dict: Diccionario con formato {apodo: [victorias, derrotas]}.
+    """
     puntajes = {}
     if os.path.exists(ruta):
         with open(ruta, "r", encoding="utf-8") as f:
@@ -24,7 +103,12 @@ def cargar_puntajes(ruta="puntajes.txt"):
     return puntajes
 
 def guardar_puntajes(puntajes, ruta="puntajes.txt"):
-    """Escribe puntajes en puntajes.txt."""
+    """
+    Guarda los puntajes en un archivo de texto.
+
+    Parámetros:
+        puntajes (dict): Diccionario con los puntajes de los jugadores.
+    """
     with open(ruta, "w", encoding="utf-8") as f:
         for apodo, (v, d) in puntajes.items():
             f.write(f"{apodo},{v},{d}\n")
@@ -32,42 +116,59 @@ def guardar_puntajes(puntajes, ruta="puntajes.txt"):
 # ------------------ Lógica del juego ------------------
 
 def gestionar_jugador(puntajes):
-    """Pide un apodo único al usuario."""
+    """
+    Solicita un apodo único al jugador y lo registra en el diccionario de puntajes.
+    """
     while True:
         apodo = input("Ingresa tu apodo: ").strip()
         if apodo in puntajes:
             print("Ese apodo ya existe, elige otro.")
         else:
-            puntajes[apodo] = [0, 0]  # victorias, derrotas
+            puntajes[apodo] = [0, 0]
             return apodo
 
-def jugar_partida(palabras, apodo, puntajes):
-    """Ejecuta una partida del ahorcado."""
-    palabra = random.choice(palabras)
+def elegir_categoria(categorias):
+    """
+    Muestra las categorías disponibles y permite al usuario elegir una.
+    """
+    print("\nCategorías disponibles:")
+    for i, cat in enumerate(categorias.keys(), 1):
+        print(f"{i}. {cat}")
+    while True:
+        opcion = input("Elige una categoría: ")
+        if opcion.isdigit() and 1 <= int(opcion) <= len(categorias):
+            return list(categorias.keys())[int(opcion)-1]
+        else:
+            print("Opción inválida, intenta de nuevo.")
+
+def jugar_partida(categorias, apodo, puntajes):
+    """
+    Ejecuta una partida del juego del ahorcado con selección de categoría.
+    """
+    categoria = elegir_categoria(categorias)
+    palabra = random.choice(categorias[categoria])
     letras_correctas = []
     letras_incorrectas = []
     intentos = 6
 
     while intentos > 0:
-        # Mostrar estado actual
         estado = [letra if letra in letras_correctas else "_" for letra in palabra]
-        print("\nPalabra:", " ".join(estado))
+        print(AHORCADO[6 - intentos])
+        print(f"\nCategoría: {categoria}")
+        print("Palabra:", " ".join(estado))
         print(f"Intentos restantes: {intentos}")
         print(f"Letras incorrectas: {', '.join(letras_incorrectas) if letras_incorrectas else '-'}")
 
         letra = input("Ingresa una letra: ").lower().strip()
 
-        # Validación de entrada
         if len(letra) != 1 or not letra.isalpha():
             print("Por favor ingresa una sola letra válida (a-z).")
             continue
 
-        # Verificar si ya fue intentada
         if letra in letras_correctas or letra in letras_incorrectas:
             print("Ya intentaste esa letra. Prueba otra.")
             continue
 
-        # Verificar si la letra está en la palabra
         if letra in palabra:
             letras_correctas.append(letra)
             if all(l in letras_correctas for l in set(palabra)):
@@ -78,12 +179,13 @@ def jugar_partida(palabras, apodo, puntajes):
             letras_incorrectas.append(letra)
             intentos -= 1
 
-    # Si se acaban los intentos
     print(f"\nPerdiste. La palabra era {palabra}")
     puntajes[apodo][1] += 1
 
 def mostrar_top_10(puntajes):
-    """Muestra el ranking Top 10 por victorias."""
+    """
+    Muestra el ranking de los 10 mejores jugadores según sus victorias.
+    """
     ranking = sorted(puntajes.items(), key=lambda x: x[1][0], reverse=True)[:10]
     print("\n--- Top 10 ---")
     for i, (apodo, (v, d)) in enumerate(ranking, 1):
@@ -92,7 +194,10 @@ def mostrar_top_10(puntajes):
 # ------------------ Menú principal ------------------
 
 def menu():
-    palabras = cargar_palabras()
+    """
+    Muestra el menú principal del juego y gestiona las opciones del usuario.
+    """
+    categorias = cargar_palabras()
     puntajes = cargar_puntajes()
 
     while True:
@@ -104,7 +209,7 @@ def menu():
 
         if opcion == "1":
             apodo = gestionar_jugador(puntajes)
-            jugar_partida(palabras, apodo, puntajes)
+            jugar_partida(categorias, apodo, puntajes)
             guardar_puntajes(puntajes)
         elif opcion == "2":
             mostrar_top_10(puntajes)
