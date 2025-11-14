@@ -32,14 +32,12 @@ comida:queso
 comida:pollo
 
 aventura:viaje
-aventura:aventura
 aventura:misterio
 aventura:historia
 aventura:universo
 aventura:planeta
 
 arte:musica
-arte:arte
 arte:fotografia
 arte:audiovisual
 arte:animacion
@@ -57,7 +55,6 @@ social:colaboracion
 social:comunicacion
 social:equipo
 
-tecnologia:tecnologia
 tecnologia:programacion
 tecnologia:automatizacion
 tecnologia:internet
@@ -69,4 +66,4 @@ marketing:fabrica
 marketing:estrategia
 marketing:promocion
 marketing:publicidad
-marketing:campaña:
+marketing:campaña
